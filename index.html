@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enterprise Simulator v2.0</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.15.3/Recharts.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e17;--bg2:#111827;--bg3:#1a2234;--bg4:#243049;
+  --tx:#c9d1d9;--tx2:#8b949e;--tx3:#484f58;
+  --ac:#00d4aa;--ac2:#00b894;--a2:#38bdf8;--a3:#a78bfa;--a4:#f0b429;
+  --dg:#f85149;--gn:#3fb950;
+  --br:#21262d;--br2:#30363d;
+  --radius:6px;
+}
+html,body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;overflow-x:hidden}
+input,select,textarea{background:var(--bg2);color:var(--tx);border:1px solid var(--br2);border-radius:4px;padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:border .2s}
+input:focus,select:focus{border-color:var(--ac)}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--br2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--tx3)}
+
+.app-shell{display:flex;flex-direction:column;min-height:100vh}
+.top-bar{background:var(--bg2);border-bottom:1px solid var(--br);padding:10px 20px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+.top-bar h1{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--ac),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.top-bar .ver{font-size:10px;color:var(--tx3);font-family:'JetBrains Mono',monospace}
+.server-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.server-dot.ok{background:var(--gn);box-shadow:0 0 6px var(--gn)}
+.server-dot.err{background:var(--dg);box-shadow:0 0 6px var(--dg)}
+
+.tab-bar{display:flex;background:var(--bg2);border-bottom:2px solid var(--br);overflow-x:auto;padding:0 12px}
+.tab-btn{padding:10px 16px;font-size:12px;font-weight:500;color:var(--tx2);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;position:relative}
+.tab-btn:hover{color:var(--tx);background:rgba(255,255,255,.03)}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:700}
+.tab-btn .tab-icon{margin-right:6px}
+
+.tab-content{flex:1;padding:16px 20px;max-width:1400px;margin:0 auto;width:100%}
+.card{background:var(--bg2);border:1px solid var(--br);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:700;color:var(--ac);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card-title .badge{font-size:9px;padding:2px 6px;border-radius:10px;font-weight:500;font-family:'JetBrains Mono',monospace}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+@media(max-width:768px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+
+.field{margin-bottom:10px}
+.field label{display:block;font-size:11px;color:var(--tx2);margin-bottom:3px;font-weight:500}
+.field input,.field select{width:100%}
+.field .hint{font-size:9px;color:var(--tx3);margin-top:2px}
+
+.btn{padding:8px 16px;border-radius:4px;font-size:12px;font-weight:600;border:none}
+.btn-primary{background:var(--ac);color:#000}
+.btn-primary:hover{background:var(--ac2)}
+.btn-secondary{background:var(--bg3);color:var(--tx);border:1px solid var(--br2)}
+.btn-secondary:hover{background:var(--bg4)}
+.btn-danger{background:var(--dg);color:#fff}
+.btn-sm{padding:4px 10px;font-size:11px}
+
+.data-table{width:100%;border-collapse:collapse;font-size:11px;font-family:'JetBrains Mono',monospace}
+.data-table th{background:var(--bg3);color:var(--tx2);font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid var(--br2);white-space:nowrap;position:sticky;top:0}
+.data-table td{padding:5px 8px;border-bottom:1px solid var(--br)}
+.data-table tr:hover{background:rgba(0,212,170,.03)}
+.data-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.data-table .win{color:var(--ac);font-weight:700}
+
+.kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.kpi{background:var(--bg3);border:1px solid var(--br);border-radius:var(--radius);padding:10px 14px;min-width:120px;flex:1}
+.kpi .kpi-label{font-size:9px;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.kpi .kpi-value{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:2px}
+.kpi .kpi-sub{font-size:9px;color:var(--tx3);margin-top:1px}
+
+.sku-sidebar{width:200px;background:var(--bg2);border-right:1px solid var(--br);padding:8px;overflow-y:auto;flex-shrink:0}
+.sku-item{padding:8px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-bottom:2px;display:flex;justify-content:space-between;align-items:center}
+.sku-item:hover{background:var(--bg3)}
+.sku-item.active{background:var(--bg4);color:var(--ac);font-weight:600;border-left:3px solid var(--ac)}
+.sku-item .sku-del{opacity:0;color:var(--dg);font-size:14px;cursor:pointer;transition:opacity .15s}
+.sku-item:hover .sku-del{opacity:1}
+
+.month-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}
+.month-cell{background:var(--bg3);border:1px solid var(--br);border-radius:3px;padding:4px;text-align:center}
+.month-cell label{font-size:8px;color:var(--tx3);display:block}
+.month-cell input{width:100%;text-align:center;padding:3px;font-size:11px;border:none;background:transparent;color:var(--tx)}
+.month-cell input:focus{background:var(--bg);border-radius:2px}
+
+.fcst-table{max-height:340px;overflow-y:auto;border:1px solid var(--br);border-radius:4px}
+.bom-row{display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg3);border-radius:4px;margin-bottom:6px;flex-wrap:wrap}
+.bom-row .field{margin-bottom:0;flex:1;min-width:80px}
+.bom-row .field label{font-size:9px}
+.bom-row .field input,.bom-row .field select{font-size:11px;padding:4px 6px}
+
+.placeholder-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center}
+.placeholder-tab .icon{font-size:48px;margin-bottom:12px;opacity:.3}
+.placeholder-tab h3{color:var(--tx2);font-size:16px;margin-bottom:6px}
+.placeholder-tab p{color:var(--tx3);font-size:12px;max-width:400px}
+
+.animate-in{animation:fadeSlide .3s ease-out}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useReducer,useEffect,useCallback,useMemo,useRef} = React;
+const {LineChart,Line,BarChart,Bar,XAxis,YAxis,CartesianGrid,Tooltip,Legend,ResponsiveContainer,ComposedChart,Area} = Recharts;
+
+// ════════════════════════════════════════════════
+// FORECAST ENGINE — All 17 models
+// ════════════════════════════════════════════════
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fill12=(v)=>Array(12).fill(Math.round(v));
+
+const forecasters = {
+  'Simple Avg': (d)=>fill12(d.reduce((a,b)=>a+b,0)/d.length),
+  'SMA(3)': (d)=>{const w=d.slice(-3);return fill12(w.reduce((a,b)=>a+b,0)/w.length)},
+  'WMA(3)': (d)=>{const w=d.slice(-3),tw=6;return fill12(w.reduce((a,v,i)=>a+v*(i+1),0)/tw)},
+  'Weighted Avg': (d)=>{const n=d.length,tw=n*(n+1)/2;return fill12(d.reduce((a,v,i)=>a+v*(i+1),0)/tw)},
+  'SES': (d,a=.3)=>{let s=d[0];d.forEach(v=>{s=a*v+(1-a)*s});return fill12(s)},
+  'Adaptive SES': (d)=>{
+    let s=d[0],bestA=.1,bestE=1e9;
+    for(let a=.05;a<=.95;a+=.05){let ss=d[0],e=0;d.forEach(v=>{e+=Math.abs(v-ss);ss=a*v+(1-a)*ss});if(e<bestE){bestE=e;bestA=a}}
+    s=d[0];d.forEach(v=>{s=bestA*v+(1-bestA)*s});return fill12(s)
+  },
+  'DES (Holt)': (d,a=.3,b=.1)=>{
+    let l=d[0],t=d.length>1?d[1]-d[0]:0;
+    d.forEach(v=>{const pl=l;l=a*v+(1-a)*(l+t);t=b*(l-pl)+(1-b)*t});
+    return Array.from({length:12},(_,i)=>Math.round(Math.max(0,l+t*(i+1))))
+  },
+  "Brown's DES": (d,a=.3)=>{
+    let s1=d[0],s2=d[0];
+    d.forEach(v=>{s1=a*v+(1-a)*s1;s2=a*s1+(1-a)*s2});
+    const at=2*s1-s2,bt=a/(1-a)*(s1-s2);
+    return Array.from({length:12},(_,i)=>Math.round(Math.max(0,at+bt*(i+1))))
+  },
+  'Linear Regression': (d)=>{
+    const n=d.length;let sx=0,sy=0,sxy=0,sx2=0;
+    d.forEach((v,i)=>{sx+=i;sy+=v;sxy+=i*v;sx2+=i*i});
+    const b=(n*sxy-sx*sy)/(n*sx2-sx*sx||1),a2=sy/n-b*sx/n;
+    return Array.from({length:12},(_,i)=>Math.round(Math.max(0,a2+b*(n+i))))
+  },
+  'HW Additive': (d,al=.3,be=.1,ga=.3)=>{
+    const m=Math.min(12,d.length);if(m<4)return fill12(d[d.length-1]);
+    let l=d.slice(0,m).reduce((a,b)=>a+b,0)/m,t=0;
+    const s=d.slice(0,m).map(v=>v-l);
+    d.forEach((v,i)=>{const si=i%m,pl=l;l=al*(v-s[si])+(1-al)*(l+t);t=be*(l-pl)+(1-be)*t;s[si]=ga*(v-l)+(1-ga)*s[si]});
+    return Array.from({length:12},(_,i)=>Math.round(Math.max(0,l+t*(i+1)+s[i%m])))
+  },
+  'HW Multiplicative': (d,al=.3,be=.1,ga=.3)=>{
+    const m=Math.min(12,d.length);if(m<4)return fill12(d[d.length-1]);
+    let l=d.slice(0,m).reduce((a,b)=>a+b,0)/m,t=0;
+    const s=d.slice(0,m).map(v=>l>0?v/l:1);
+    d.forEach((v,i)=>{const si=i%m,pl=l;l=al*(s[si]>0?v/s[si]:v)+(1-al)*(l+t);t=be*(l-pl)+(1-be)*t;s[si]=ga*(l>0?v/l:1)+(1-ga)*s[si]});
+    return Array.from({length:12},(_,i)=>Math.round(Math.max(0,(l+t*(i+1))*s[i%m])))
+  },
+  'Seasonal LinReg': (d)=>{
+    const m=Math.min(12,d.length),n=d.length;
+    let sx=0,sy=0,sxy=0,sx2=0;
+    d.forEach((v,i)=>{sx+=i;sy+=v;sxy+=i*v;sx2+=i*i});
+    const b=(n*sxy-sx*sy)/(n*sx2-sx*sx||1),a2=sy/n-b*sx/n;
+    const detrended=d.map((v,i)=>v-(a2+b*i));
+    const sIdx=Array(m).fill(0),sCnt=Array(m).fill(0);
+    detrended.forEach((v,i)=>{sIdx[i%m]+=v;sCnt[i%m]++});
+    const sF=sIdx.map((v,i)=>sCnt[i]?v/sCnt[i]:0);
+    return Array.from({length:12},(_,i)=>Math.round(Math.max(0,a2+b*(n+i)+sF[i%m])))
+  },
+  'Auto-ARIMA': (d)=>{
+    // Simplified: AR(1) + drift
+    if(d.length<3)return fill12(d[d.length-1]);
+    const n=d.length,mu=d.reduce((a,b)=>a+b,0)/n;
+    let num=0,den=0;
+    for(let i=1;i<n;i++){num+=(d[i]-mu)*(d[i-1]-mu);den+=(d[i-1]-mu)**2}
+    const phi=den>0?num/den:0,c=mu*(1-phi);
+    let last=d[n-1];
+    return Array.from({length:12},()=>{last=c+phi*last;return Math.round(Math.max(0,last))})
+  },
+  'Auto-SARIMA': (d)=>{
+    const m=Math.min(12,d.length);if(m<4)return fill12(d[d.length-1]);
+    const sIdx=Array(m).fill(0),sCnt=Array(m).fill(0);
+    d.forEach((v,i)=>{sIdx[i%m]+=v;sCnt[i%m]++});
+    const sF=sIdx.map((v,i)=>sCnt[i]?v/sCnt[i]:0);
+    const deseason=d.map((v,i)=>v-sF[i%m]);
+    const n=deseason.length,mu=deseason.reduce((a,b)=>a+b,0)/n;
+    let num=0,den=0;
+    for(let i=1;i<n;i++){num+=(deseason[i]-mu)*(deseason[i-1]-mu);den+=(deseason[i-1]-mu)**2}
+    const phi=den>0?num/den:0,c=mu*(1-phi);
+    let last=deseason[n-1];
+    return Array.from({length:12},(_,i)=>{last=c+phi*last;return Math.round(Math.max(0,last+sF[i%m]))})
+  },
+  "Croston's": (d,a=.3)=>{
+    let z=d.find(v=>v>0)||1,p=1,k=0;
+    d.forEach(v=>{k++;if(v>0){z=a*v+(1-a)*z;p=a*k+(1-a)*p;k=0}});
+    return fill12(Math.round(z/Math.max(p,1)))
+  },
+  'Naive': (d)=>fill12(d[d.length-1]),
+  'Seasonal Naive': (d)=>{const m=Math.min(12,d.length);return d.slice(-m).map(v=>Math.round(v))},
+};
+
+function calcErrors(actual,forecast){
+  const n=Math.min(actual.length,forecast.length);if(n<1)return{};
+  let ae=0,se=0,pe=0,ape=0,cnt=0;
+  for(let i=0;i<n;i++){
+    const a=actual[i],f=forecast[i],e=a-f;
+    ae+=Math.abs(e);se+=e*e;pe+=e;
+    if(a>0){ape+=Math.abs(e)/a;cnt++}
+  }
+  const mae=ae/n,mse=se/n,rmse=Math.sqrt(mse);
+  const mape=cnt>0?ape/cnt*100:999;
+  const bias=pe/n;
+  const sumA=actual.slice(0,n).reduce((a,b)=>a+b,0);
+  const wmape=sumA>0?ae/sumA*100:999;
+  // Tracking signal
+  let runSum=0,runMAD=0;
+  for(let i=0;i<n;i++){const e=actual[i]-forecast[i];runSum+=e;runMAD+=Math.abs(e)}
+  const mad=runMAD/n;
+  const ts=mad>0?Math.abs(runSum/mad):0;
+  return{mape:+mape.toFixed(1),mae:+mae.toFixed(1),rmse:+rmse.toFixed(1),wmape:+wmape.toFixed(1),bias:+bias.toFixed(1),ts:+ts.toFixed(2)}
+}
+
+function runAllForecasts(history){
+  if(!history||history.length<3)return[];
+  const results=[];
+  for(const[name,fn]of Object.entries(forecasters)){
+    try{
+      const fc=fn(history);
+      const errs=calcErrors(history,fn(history.slice(0,-1)).concat([history[history.length-1]]));
+      // Better: use leave-one-out on last period
+      const trainFc=fn(history.slice(0,-1));
+      const holdout=[history[history.length-1]];
+      const holdoutFc=[trainFc[0]];
+      const testErr=calcErrors(holdout,holdoutFc);
+      results.push({name,forecast:fc,...calcErrors(history,fc.slice(0,history.length)),fullMape:calcErrors(history,fc.slice(0,history.length)).mape})
+    }catch(e){/* skip broken model */}
+  }
+  results.sort((a,b)=>(a.mape||999)-(b.mape||999));
+  return results
+}
+
+// ════════════════════════════════════════════════
+// DEFAULT DATA
+// ════════════════════════════════════════════════
+const defaultSKU=()=>({
+  id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+  name:'New Product',category:'Finished Good',shelfLife:52,
+  unitWeight:1,unitVolume:0.01,sellPrice:100,variableCost:5,
+  setupCost:50,capacity:50,yieldPct:0.95,initInventory:0,
+  history:[120,135,128,140,155,148,162,170,158,145,138,150],
+  overrides:Array(12).fill(null),
+  events:[],
+  bom:[{
+    id:Date.now().toString(36),name:'Raw Material A',qtyPer:2,scrapFactor:0.05,
+    cost:10,moq:50,maxOrder:500,leadTime:2,ltCV:0.1,holdPct:24,
+    rmShelf:52,rmCapacity:2000,orderingCost:75,
+    supplierType:'domestic',country:'',incoterm:'',hsCode:'',
+  }],
+  mtoOrders:[],
+});
+
+const defaultState={
+  config:{
+    companyName:'My Enterprise',currency:'₹',currencyRate:1,
+    fiscalYear:'Apr-Mar',gstRegistered:true,taxRate:25,
+    wacc:10,serviceLevel:0.95,
+  },
+  planning:{
+    startMonth:0,periods:52,workDays:6,
+    indianHolidays:true,planningUnit:'weekly',
+  },
+  budget:{procurement:0,capex:0,workingCapital:0},
+  production:{
+    lines:[{id:'line1',name:'Line 1',type:'shared',capacity:50,shiftsPerDay:1,hoursPerShift:8}],
+  },
+  products:[{...defaultSKU(),name:'Product A'}],
+  activeProductId:null,
+  serverStatus:'checking',
+};
+
+// ════════════════════════════════════════════════
+// STATE REDUCER
+// ════════════════════════════════════════════════
+function reducer(state,action){
+  const s={...state};
+  switch(action.type){
+    case 'SET_CONFIG':s.config={...s.config,...action.payload};break;
+    case 'SET_PLANNING':s.planning={...s.planning,...action.payload};break;
+    case 'SET_BUDGET':s.budget={...s.budget,...action.payload};break;
+    case 'SET_PRODUCTION':s.production={...s.production,...action.payload};break;
+    case 'ADD_PRODUCT':s.products=[...s.products,{...defaultSKU(),...action.payload}];break;
+    case 'DELETE_PRODUCT':s.products=s.products.filter(p=>p.id!==action.id);if(s.activeProductId===action.id)s.activeProductId=s.products[0]?.id||null;break;
+    case 'UPDATE_PRODUCT':{
+      const idx=s.products.findIndex(p=>p.id===action.id);
+      if(idx>=0)s.products=[...s.products];s.products[idx]={...s.products[idx],...action.payload};
+      break;
+    }
+    case 'SET_ACTIVE_PRODUCT':s.activeProductId=action.id;break;
+    case 'SET_SERVER_STATUS':s.serverStatus=action.status;break;
+    case 'ADD_BOM_ITEM':{
+      const idx=s.products.findIndex(p=>p.id===action.productId);
+      if(idx>=0){s.products=[...s.products];s.products[idx]={...s.products[idx],bom:[...s.products[idx].bom,{
+        id:Date.now().toString(36),name:'New Part',qtyPer:1,scrapFactor:0,cost:5,moq:10,maxOrder:500,leadTime:1,ltCV:0.1,holdPct:24,rmShelf:52,rmCapacity:1000,orderingCost:50,supplierType:'domestic',country:'',incoterm:'',hsCode:'',
+      }]}}
+      break;
+    }
+    case 'UPDATE_BOM_ITEM':{
+      const pi=s.products.findIndex(p=>p.id===action.productId);
+      if(pi>=0){s.products=[...s.products];const bom=[...s.products[pi].bom];const bi=bom.findIndex(b=>b.id===action.bomId);if(bi>=0){bom[bi]={...bom[bi],...action.payload};s.products[pi]={...s.products[pi],bom}}}
+      break;
+    }
+    case 'DELETE_BOM_ITEM':{
+      const pi=s.products.findIndex(p=>p.id===action.productId);
+      if(pi>=0){s.products=[...s.products];s.products[pi]={...s.products[pi],bom:s.products[pi].bom.filter(b=>b.id!==action.bomId)}}
+      break;
+    }
+    case 'UPDATE_HISTORY':{
+      const pi=s.products.findIndex(p=>p.id===action.productId);
+      if(pi>=0){s.products=[...s.products];const h=[...s.products[pi].history];h[action.month]=action.value;s.products[pi]={...s.products[pi],history:h}}
+      break;
+    }
+    case 'UPDATE_OVERRIDE':{
+      const pi=s.products.findIndex(p=>p.id===action.productId);
+      if(pi>=0){s.products=[...s.products];const o=[...s.products[pi].overrides];o[action.month]=action.value;s.products[pi]={...s.products[pi],overrides:o}}
+      break;
+    }
+    default:break;
+  }
+  return s;
+}
+
+// ════════════════════════════════════════════════
+// COMPONENTS
+// ════════════════════════════════════════════════
+
+function Field({label,hint,children}){
+  return <div className="field"><label>{label}</label>{children}{hint&&<div className="hint">{hint}</div>}</div>
+}
+
+function KPI({label,value,sub,color}){
+  return <div className="kpi"><div className="kpi-label">{label}</div><div className="kpi-value" style={{color:color||'var(--ac)'}}>{value}</div>{sub&&<div className="kpi-sub">{sub}</div>}</div>
+}
+
+// ─── TAB 1: SETUP ───
+function SetupTab({state,dispatch}){
+  const c=state.config,pl=state.planning,bu=state.budget;
+  const upC=(k,v)=>dispatch({type:'SET_CONFIG',payload:{[k]:v}});
+  const upP=(k,v)=>dispatch({type:'SET_PLANNING',payload:{[k]:v}});
+  const upB=(k,v)=>dispatch({type:'SET_BUDGET',payload:{[k]:v}});
+  return <div className="animate-in">
+    <div className="card"><div className="card-title">🏢 Company Profile</div>
+      <div className="grid3">
+        <Field label="Company Name"><input value={c.companyName} onChange={e=>upC('companyName',e.target.value)}/></Field>
+        <Field label="Currency Symbol"><input value={c.currency} onChange={e=>upC('currency',e.target.value)} style={{width:60}}/></Field>
+        <Field label="GST Registered"><select value={c.gstRegistered?'yes':'no'} onChange={e=>upC('gstRegistered',e.target.value==='yes')}><option value="yes">Yes</option><option value="no">No</option></select></Field>
+        <Field label="Tax Rate %" hint="Corporate tax rate for depreciation tax shield"><input type="number" value={c.taxRate} onChange={e=>upC('taxRate',+e.target.value)}/></Field>
+        <Field label="WACC %" hint="Weighted average cost of capital for NPV discounting"><input type="number" value={c.wacc} onChange={e=>upC('wacc',+e.target.value)}/></Field>
+        <Field label="Target Service Level"><select value={c.serviceLevel} onChange={e=>upC('serviceLevel',+e.target.value)}><option value={0.85}>85%</option><option value={0.90}>90%</option><option value={0.95}>95%</option><option value={0.99}>99%</option></select></Field>
+      </div>
+    </div>
+    <div className="card"><div className="card-title">📅 Planning Horizon</div>
+      <div className="grid4">
+        <Field label="Start Month"><select value={pl.startMonth} onChange={e=>upP('startMonth',+e.target.value)}>{MONTHS.map((m,i)=><option key={i} value={i}>{m}</option>)}</select></Field>
+        <Field label="Periods (weeks)"><input type="number" value={pl.periods} onChange={e=>upP('periods',+e.target.value)}/></Field>
+        <Field label="Work Days/Week"><select value={pl.workDays} onChange={e=>upP('workDays',+e.target.value)}><option value={5}>5 (Mon-Fri)</option><option value={6}>6 (Mon-Sat)</option><option value={7}>7 (All days)</option></select></Field>
+        <Field label="Indian Holidays"><select value={pl.indianHolidays?'yes':'no'} onChange={e=>upP('indianHolidays',e.target.value==='yes')}><option value="yes">Yes — exclude gazetted</option><option value="no">No</option></select></Field>
+      </div>
+    </div>
+    <div className="card"><div className="card-title">💰 Budget Envelope <span className="badge" style={{background:'var(--bg4)',color:'var(--a4)'}}>Optional constraints</span></div>
+      <div className="grid3">
+        <Field label={`Procurement Budget (${c.currency})`} hint="0 = unlimited"><input type="number" value={bu.procurement} onChange={e=>upB('procurement',+e.target.value)}/></Field>
+        <Field label={`CAPEX Budget (${c.currency})`} hint="For buy/lease decisions"><input type="number" value={bu.capex} onChange={e=>upB('capex',+e.target.value)}/></Field>
+        <Field label={`Working Capital Limit (${c.currency})`} hint="Max tied up in inventory"><input type="number" value={bu.workingCapital} onChange={e=>upB('workingCapital',+e.target.value)}/></Field>
+      </div>
+    </div>
+    <div className="card"><div className="card-title">🏭 Production Lines</div>
+      {state.production.lines.map((line,i)=><div key={line.id} className="bom-row">
+        <Field label="Line Name"><input value={line.name} onChange={e=>{const ls=[...state.production.lines];ls[i]={...ls[i],name:e.target.value};dispatch({type:'SET_PRODUCTION',payload:{lines:ls}})}}/></Field>
+        <Field label="Type"><select value={line.type} onChange={e=>{const ls=[...state.production.lines];ls[i]={...ls[i],type:e.target.value};dispatch({type:'SET_PRODUCTION',payload:{lines:ls}})}}><option value="shared">Shared (multi-SKU sequential)</option><option value="dedicated">Dedicated (single SKU)</option><option value="flexible">Flexible (any SKU parallel)</option></select></Field>
+        <Field label="Capacity (units/day)"><input type="number" value={line.capacity} onChange={e=>{const ls=[...state.production.lines];ls[i]={...ls[i],capacity:+e.target.value};dispatch({type:'SET_PRODUCTION',payload:{lines:ls}})}}/></Field>
+        <Field label="Shifts/Day"><input type="number" value={line.shiftsPerDay} min={1} max={3} onChange={e=>{const ls=[...state.production.lines];ls[i]={...ls[i],shiftsPerDay:+e.target.value};dispatch({type:'SET_PRODUCTION',payload:{lines:ls}})}}/></Field>
+      </div>)}
+      <button className="btn btn-secondary btn-sm" style={{marginTop:6}} onClick={()=>{dispatch({type:'SET_PRODUCTION',payload:{lines:[...state.production.lines,{id:Date.now().toString(36),name:`Line ${state.production.lines.length+1}`,type:'shared',capacity:50,shiftsPerDay:1,hoursPerShift:8}]}})}}>+ Add Line</button>
+    </div>
+  </div>
+}
+
+// ─── TAB 2: PRODUCTS & DEMAND ───
+function ProductsTab({state,dispatch}){
+  const products=state.products;
+  const activeId=state.activeProductId||products[0]?.id;
+  const prod=products.find(p=>p.id===activeId);
+
+  useEffect(()=>{if(!state.activeProductId&&products.length)dispatch({type:'SET_ACTIVE_PRODUCT',id:products[0].id})},[]);
+
+  const forecastResults=useMemo(()=>{
+    if(!prod||!prod.history||prod.history.length<3)return[];
+    return runAllForecasts(prod.history);
+  },[prod?.history]);
+
+  const bestModel=forecastResults[0];
+  const consensus=useMemo(()=>{
+    if(!forecastResults.length)return Array(12).fill(0);
+    // Weighted blend of top 3 models by inverse MAPE
+    const top3=forecastResults.slice(0,3).filter(r=>r.mape>0);
+    if(!top3.length)return forecastResults[0]?.forecast||Array(12).fill(0);
+    const totalW=top3.reduce((a,r)=>a+1/r.mape,0);
+    return Array.from({length:12},(_,i)=>Math.round(top3.reduce((a,r)=>a+(r.forecast[i]||0)/r.mape,0)/totalW));
+  },[forecastResults]);
+
+  const finalDemand=useMemo(()=>{
+    if(!prod)return Array(12).fill(0);
+    return consensus.map((v,i)=>prod.overrides[i]!==null&&prod.overrides[i]!==''?+prod.overrides[i]:v);
+  },[consensus,prod?.overrides]);
+
+  const upProd=(payload)=>dispatch({type:'UPDATE_PRODUCT',id:activeId,payload});
+  const cur=state.config.currency;
+
+  const chartData=useMemo(()=>{
+    if(!prod)return[];
+    return MONTHS.map((m,i)=>({
+      name:m,
+      history:prod.history[i]||0,
+      forecast:bestModel?.forecast[i]||0,
+      consensus:consensus[i]||0,
+      final:finalDemand[i]||0,
+    }));
+  },[prod?.history,bestModel,consensus,finalDemand]);
+
+  if(!prod)return <div className="placeholder-tab"><div className="icon">📦</div><h3>No products yet</h3><p>Add your first product to begin</p><button className="btn btn-primary" onClick={()=>dispatch({type:'ADD_PRODUCT',payload:{name:'Product A'}})}>+ Add Product</button></div>;
+
+  return <div className="animate-in" style={{display:'flex',gap:12,minHeight:'calc(100vh - 120px)'}}>
+    {/* SKU Sidebar */}
+    <div className="sku-sidebar">
+      <div style={{fontSize:10,color:'var(--tx2)',fontWeight:600,marginBottom:6,textTransform:'uppercase',letterSpacing:'.5px'}}>Products ({products.length})</div>
+      {products.map(p=><div key={p.id} className={`sku-item${p.id===activeId?' active':''}`} onClick={()=>dispatch({type:'SET_ACTIVE_PRODUCT',id:p.id})}>
+        <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</span>
+        {products.length>1&&<span className="sku-del" onClick={e=>{e.stopPropagation();dispatch({type:'DELETE_PRODUCT',id:p.id})}}>×</span>}
+      </div>)}
+      <button className="btn btn-secondary btn-sm" style={{width:'100%',marginTop:8}} onClick={()=>{const s=defaultSKU();s.name=`Product ${String.fromCharCode(65+products.length)}`;dispatch({type:'ADD_PRODUCT',payload:s})}}>+ Add SKU</button>
+    </div>
+
+    {/* Main Panel */}
+    <div style={{flex:1,minWidth:0}}>
+      {/* Product Header */}
+      <div className="card">
+        <div className="grid4">
+          <Field label="Product Name"><input value={prod.name} onChange={e=>upProd({name:e.target.value})}/></Field>
+          <Field label={`Selling Price (${cur})`}><input type="number" value={prod.sellPrice} onChange={e=>upProd({sellPrice:+e.target.value})}/></Field>
+          <Field label="Shelf Life (weeks)"><input type="number" value={prod.shelfLife} onChange={e=>upProd({shelfLife:+e.target.value})}/></Field>
+          <Field label="Yield %"><input type="number" value={Math.round(prod.yieldPct*100)} onChange={e=>upProd({yieldPct:+e.target.value/100})} min={1} max={100}/></Field>
+        </div>
+        <div className="grid4">
+          <Field label={`Variable Cost/unit (${cur})`}><input type="number" value={prod.variableCost} onChange={e=>upProd({variableCost:+e.target.value})}/></Field>
+          <Field label={`Setup Cost/batch (${cur})`}><input type="number" value={prod.setupCost} onChange={e=>upProd({setupCost:+e.target.value})}/></Field>
+          <Field label="Capacity (units/week)"><input type="number" value={prod.capacity} onChange={e=>upProd({capacity:+e.target.value})}/></Field>
+          <Field label="Initial Inventory"><input type="number" value={prod.initInventory} onChange={e=>upProd({initInventory:+e.target.value})}/></Field>
+        </div>
+      </div>
+
+      {/* Historical Demand */}
+      <div className="card">
+        <div className="card-title">📊 Historical Demand (monthly units)</div>
+        <div className="month-grid">
+          {MONTHS.map((m,i)=><div key={m} className="month-cell">
+            <label>{m}</label>
+            <input type="number" value={prod.history[i]||0} onChange={e=>dispatch({type:'UPDATE_HISTORY',productId:activeId,month:i,value:+e.target.value})}/>
+          </div>)}
+        </div>
+        <div style={{marginTop:8,fontSize:10,color:'var(--tx3)'}}>
+          Annual: <strong style={{color:'var(--ac)'}}>{prod.history.reduce((a,b)=>a+b,0).toLocaleString()}</strong> units | 
+          Avg: <strong>{Math.round(prod.history.reduce((a,b)=>a+b,0)/12)}</strong>/mo
+        </div>
+      </div>
+
+      {/* Forecast Chart */}
+      <div className="card">
+        <div className="card-title">📈 Forecast Comparison</div>
+        <div style={{height:220}}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={chartData} margin={{top:5,right:10,left:0,bottom:5}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#21262d"/>
+              <XAxis dataKey="name" tick={{fill:'#8b949e',fontSize:10}} stroke="#21262d"/>
+              <YAxis tick={{fill:'#8b949e',fontSize:10}} stroke="#21262d"/>
+              <Tooltip contentStyle={{background:'#1c2333',border:'1px solid #30363d',borderRadius:4,fontSize:11,fontFamily:'JetBrains Mono'}} labelStyle={{color:'#c9d1d9'}}/>
+              <Bar dataKey="history" fill="#38bdf8" opacity={0.4} name="History"/>
+              <Line type="monotone" dataKey="consensus" stroke="#00d4aa" strokeWidth={2} dot={false} name="Consensus"/>
+              <Line type="monotone" dataKey="final" stroke="#f0b429" strokeWidth={2} strokeDasharray="4 2" dot={false} name="Final Plan"/>
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Forecast Models Competition */}
+      <div className="card">
+        <div className="card-title">🏆 Forecast Model Competition <span className="badge" style={{background:'rgba(0,212,170,.1)',color:'var(--ac)'}}>{forecastResults.length} models</span></div>
+        {forecastResults.length>0 && <div className="kpi-row">
+          <KPI label="Winner" value={bestModel.name} sub={`MAPE: ${bestModel.mape}%`}/>
+          <KPI label="Annual Forecast" value={bestModel.forecast.reduce((a,b)=>a+b,0).toLocaleString()} sub="units (consensus)" color="var(--a2)"/>
+          <KPI label="Consensus MAPE" value={`${bestModel.mape}%`} sub={bestModel.mape<10?'Excellent':bestModel.mape<20?'Good':'Needs review'} color={bestModel.mape<10?'var(--gn)':bestModel.mape<20?'var(--a4)':'var(--dg)'}/>
+        </div>}
+        <div className="fcst-table">
+          <table className="data-table">
+            <thead><tr><th>#</th><th>Model</th><th>MAPE%</th><th>MAE</th><th>RMSE</th><th>WMAPE%</th><th>Bias</th><th>TS</th>{MONTHS.map(m=><th key={m}>{m.slice(0,3)}</th>)}</tr></thead>
+            <tbody>{forecastResults.map((r,i)=><tr key={r.name}>
+              <td>{i+1}</td>
+              <td className={i===0?'win':''}>{r.name}</td>
+              <td className="num" style={{color:i===0?'var(--ac)':'var(--tx)'}}>{r.mape}</td>
+              <td className="num">{r.mae}</td>
+              <td className="num">{r.rmse}</td>
+              <td className="num">{r.wmape}</td>
+              <td className="num" style={{color:r.bias>0?'var(--a4)':'var(--a2)'}}>{r.bias>0?'+':''}{r.bias}</td>
+              <td className="num" style={{color:r.ts>4?'var(--dg)':'var(--tx)'}}>{r.ts}</td>
+              {(r.forecast||[]).map((v,j)=><td key={j} className="num">{v}</td>)}
+            </tr>)}</tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Manual Overrides */}
+      <div className="card">
+        <div className="card-title">✏️ Demand Plan Overrides <span className="badge" style={{background:'rgba(240,180,41,.1)',color:'var(--a4)'}}>FVA tracked</span></div>
+        <div style={{fontSize:10,color:'var(--tx3)',marginBottom:6}}>Override consensus forecast for specific months. Leave blank to use model output. FVA (Forecast Value Add) measures if your overrides improve accuracy.</div>
+        <div className="month-grid">
+          {MONTHS.map((m,i)=><div key={m} className="month-cell" style={{borderColor:prod.overrides[i]!==null&&prod.overrides[i]!==''?'var(--a4)':'var(--br)'}}>
+            <label>{m} ({consensus[i]})</label>
+            <input type="number" placeholder="—" value={prod.overrides[i]!==null?prod.overrides[i]:''} onChange={e=>dispatch({type:'UPDATE_OVERRIDE',productId:activeId,month:i,value:e.target.value===''?null:+e.target.value})}/>
+          </div>)}
+        </div>
+        <div style={{marginTop:6,fontSize:10,color:'var(--tx3)'}}>
+          Final demand plan: {finalDemand.map((v,i)=><span key={i} style={{color:prod.overrides[i]!==null?'var(--a4)':'var(--tx)',marginRight:4}}>{MONTHS[i].slice(0,1)}:{v}</span>)}
+        </div>
+      </div>
+
+      {/* BOM */}
+      <div className="card">
+        <div className="card-title">🔧 Bill of Materials (BOM) <span className="badge" style={{background:'rgba(167,139,250,.1)',color:'var(--a3)'}}>{prod.bom.length} parts</span></div>
+        {prod.bom.map((b,bi)=><div key={b.id} className="bom-row">
+          <Field label="Part Name"><input value={b.name} onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{name:e.target.value}})}/></Field>
+          <Field label="Qty/Unit"><input type="number" step="0.1" value={b.qtyPer} onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{qtyPer:+e.target.value}})}/></Field>
+          <Field label={`Cost/unit (${cur})`}><input type="number" step="0.01" value={b.cost} onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{cost:+e.target.value}})}/></Field>
+          <Field label="Lead Time (wk)"><input type="number" value={b.leadTime} onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{leadTime:+e.target.value}})}/></Field>
+          <Field label="MOQ"><input type="number" value={b.moq} onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{moq:+e.target.value}})}/></Field>
+          <Field label="Max Order"><input type="number" value={b.maxOrder} onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{maxOrder:+e.target.value}})}/></Field>
+          <Field label={`Order Cost (${cur})`} hint="Admin + transport per PO"><input type="number" value={b.orderingCost} onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{orderingCost:+e.target.value}})}/></Field>
+          <Field label="Hold %/yr"><input type="number" value={b.holdPct} onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{holdPct:+e.target.value}})}/></Field>
+          <Field label="Source"><select value={b.supplierType} onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{supplierType:e.target.value}})}><option value="domestic">Domestic</option><option value="import">Import</option></select></Field>
+          {b.supplierType==='import'&&<>
+            <Field label="Incoterm"><select value={b.incoterm||''} onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{incoterm:e.target.value}})}><option value="">Select</option><option>EXW</option><option>FOB</option><option>CIF</option><option>DDP</option></select></Field>
+            <Field label="HS Code"><input value={b.hsCode||''} placeholder="8479.10" onChange={e=>dispatch({type:'UPDATE_BOM_ITEM',productId:activeId,bomId:b.id,payload:{hsCode:e.target.value}})}/></Field>
+          </>}
+          <button className="btn btn-danger btn-sm" style={{alignSelf:'flex-end',marginBottom:0}} onClick={()=>dispatch({type:'DELETE_BOM_ITEM',productId:activeId,bomId:b.id})}>×</button>
+        </div>)}
+        <button className="btn btn-secondary btn-sm" style={{marginTop:6}} onClick={()=>dispatch({type:'ADD_BOM_ITEM',productId:activeId})}>+ Add Subpart</button>
+        <div style={{marginTop:8,fontSize:10,color:'var(--tx3)'}}>
+          Unit material cost: <strong style={{color:'var(--ac)'}}>{cur}{prod.bom.reduce((a,b)=>a+b.cost*b.qtyPer,0).toFixed(2)}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+// ─── PLACEHOLDER TABS ───
+function PlaceholderTab({icon,title,desc,phase}){
+  return <div className="placeholder-tab animate-in"><div className="icon">{icon}</div><h3>{title}</h3><p>{desc}</p><div style={{marginTop:12,fontSize:10,color:'var(--tx3)',background:'var(--bg3)',padding:'6px 12px',borderRadius:4}}>🔨 {phase}</div></div>
+}
+
+// ─── TAB 5: OPTIMIZE (partial) ───
+function OptimizeTab({state,dispatch}){
+  const [solving,setSolving]=useState(false);
+  const [result,setResult]=useState(null);
+  const [error,setError]=useState(null);
+  const [solverMode,setSolverMode]=useState('procurement');
+  const cur=state.config.currency;
+
+  const weeklyDemand=(p)=>p.history.flatMap(m=>{const w=Math.round(m/4);return[w,w,w,m-3*w]}).slice(0,state.planning.periods);
+
+  const handleSolve=async()=>{
+    setSolving(true);setError(null);setResult(null);
+    try{
+      let endpoint,payload;
+      if(solverMode==='procurement'){
+        endpoint='/api/solve/procurement';
+        payload={
+          products:state.products.map(p=>({
+            name:p.name,demand:weeklyDemand(p),capacity:p.capacity,setup_cost:p.setupCost,
+            variable_cost:p.variableCost,sell_price:p.sellPrice,shelf_life:p.shelfLife,
+            yield_pct:p.yieldPct,init_inventory:p.initInventory,mape_pct:15,
+            parts:p.bom.map(b=>({name:b.name,cost:b.cost,qty_per:b.qtyPer,lead_time:b.leadTime,moq:b.moq,max_order:b.maxOrder,hold_pct:b.holdPct,rm_capacity:b.rmCapacity,ordering_cost:b.orderingCost,rm_shelf:b.rmShelf,scrap_factor:b.scrapFactor})),
+          })),
+          params:{periods:state.planning.periods,carry_rate:0.24,wh_max:5000,service_level:state.config.serviceLevel,budget:state.budget.procurement||0,shared_capacity:state.production.lines[0]?.capacity||50},
+          capacity_mode:state.production.lines[0]?.type||'shared',
+        };
+      }else if(solverMode==='production'){
+        endpoint='/api/solve/production';
+        const annDemand=p=>p.history.reduce((a,b)=>a+b,0);
+        payload={
+          products:state.products.map(p=>({name:p.name,required_qty:annDemand(p),setup_cost:p.setupCost,yield_pct:p.yieldPct,cycle_time:1})),
+          lines:state.production.lines.map((l,i)=>({id:l.id,name:l.name,capacity:l.capacity,type:l.type,shifts_per_day:l.shiftsPerDay,products:state.products.map((_,k)=>k)})),
+          params:{periods:state.planning.periods,changeover_cost:100,overtime_cost_per_hr:50},
+        };
+      }else if(solverMode==='profitmix'){
+        endpoint='/api/solve/profitmix';
+        payload={
+          products:state.products.map(p=>({name:p.name,sell_price:p.sellPrice,variable_cost:p.variableCost,max_demand:p.history.reduce((a,b)=>a+b,0),cycle_time:1,parts:p.bom.map(b=>({name:b.name,cost:b.cost,qty_per:b.qtyPer}))})),
+          constraints:{shared_capacity:state.production.lines.reduce((a,l)=>a+l.capacity*state.planning.periods,0),budget:state.budget.procurement||0,warehouse:5000},
+        };
+      }else if(solverMode==='transport'){
+        endpoint='/api/solve/transport';
+        payload={
+          shipments:state.products.flatMap(p=>p.bom.filter(b=>b.supplierType==='import'||b.leadTime>2).map(b=>({
+            name:`${b.name} for ${p.name}`,weight_kg:b.qtyPer*p.history.reduce((a,v)=>a+v,0)/12*10,volume_cbm:b.qtyPer*p.history.reduce((a,v)=>a+v,0)/12*0.01,
+            value:b.cost*b.qtyPer*p.history.reduce((a,v)=>a+v,0)/12,deadline_days:b.leadTime*7,urgency:b.leadTime<=1?'critical':b.leadTime<=3?'high':'normal',
+            origin:b.supplierType==='import'?'International':'Domestic',destination:'Factory',demand_spike:false,
+          }))),
+          params:{},
+        };
+        if(!payload.shipments.length)payload.shipments=[{name:'Sample Shipment',weight_kg:500,volume_cbm:2,value:50000,deadline_days:21,urgency:'normal',origin:'Shanghai',destination:'Chennai'}];
+      }else if(solverMode==='montecarlo'){
+        endpoint='/api/solve/montecarlo';
+        payload={
+          products:state.products.map(p=>({name:p.name,demand:weeklyDemand(p),capacity:p.capacity,setup_cost:p.setupCost,variable_cost:p.variableCost,sell_price:p.sellPrice,shelf_life:p.shelfLife,yield_pct:p.yieldPct,init_inventory:p.initInventory,mape_pct:15,parts:p.bom.map(b=>({cost:b.cost,qty_per:b.qtyPer,cost_cv:0.05}))})),
+          params:{periods:state.planning.periods,carry_rate:0.24,service_level:state.config.serviceLevel},n_runs:500,
+        };
+      }
+      const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const data=await res.json();
+      if(data.error){setError(data.error)}else{setResult({...data,_mode:solverMode})}
+    }catch(e){setError(e.message)}
+    setSolving(false);
+  };
+
+  const MODES=[
+    {id:'procurement',label:'Procurement Optimizer',icon:'📦',desc:'Minimize total procurement + inventory cost',obj:'Min Cost'},
+    {id:'production',label:'Production Scheduler',icon:'🏭',desc:'Minimize setup + overtime + makespan',obj:'Min Makespan'},
+    {id:'profitmix',label:'Profit Maximizer',icon:'💰',desc:'Maximize contribution margin given constraints',obj:'Max Profit'},
+    {id:'transport',label:'Transport Optimizer',icon:'🚛',desc:'Select optimal mode + carrier allocation',obj:'Min Logistics'},
+    {id:'montecarlo',label:'Monte Carlo Risk',icon:'🎲',desc:'500 stochastic runs → VaR/CVaR distribution',obj:'Risk Analysis'},
+  ];
+
+  return <div className="animate-in">
+    {/* Solver Mode Selector */}
+    <div className="card">
+      <div className="card-title">⚡ Optimization Engine <span className="badge" style={{background:'rgba(56,189,248,.1)',color:'var(--a2)'}}>MILP · PuLP/CBC</span></div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:6,marginBottom:12}}>
+        {MODES.map(m=><div key={m.id} onClick={()=>setSolverMode(m.id)} style={{padding:'8px 10px',borderRadius:4,cursor:'pointer',border:`1px solid ${solverMode===m.id?'var(--ac)':'var(--br)'}`,background:solverMode===m.id?'rgba(0,212,170,.08)':'var(--bg3)',textAlign:'center',transition:'all .15s'}}>
+          <div style={{fontSize:20}}>{m.icon}</div>
+          <div style={{fontSize:10,fontWeight:600,color:solverMode===m.id?'var(--ac)':'var(--tx)',marginTop:2}}>{m.label}</div>
+          <div style={{fontSize:8,color:'var(--tx3)',marginTop:1}}>{m.obj}</div>
+        </div>)}
+      </div>
+      <div style={{fontSize:10,color:'var(--tx2)',marginBottom:8,padding:'4px 8px',background:'var(--bg3)',borderRadius:4}}>
+        {MODES.find(m=>m.id===solverMode)?.desc}
+      </div>
+      <button className="btn btn-primary" onClick={handleSolve} disabled={solving}>{solving?'⏳ Solving...':'🔬 Run '+MODES.find(m=>m.id===solverMode)?.label}</button>
+      {error&&<div style={{color:'var(--dg)',fontSize:11,padding:8,background:'rgba(248,81,73,.08)',borderRadius:4,marginTop:8}}>❌ {error}</div>}
+    </div>
+
+    {/* ─── PROCUREMENT RESULTS ─── */}
+    {result&&result._mode==='procurement'&&<div className="card">
+      <div className="card-title">📦 Procurement MILP Results</div>
+      <div className="kpi-row">
+        <KPI label="Total Cost" value={`${cur}${result.total_cost?.toLocaleString()}`} sub={`${result.periods} periods`}/>
+        <KPI label="Solve Time" value={`${result.solve_time}s`} sub="CBC" color="var(--a2)"/>
+        <KPI label="Status" value={result.status} color="var(--gn)"/>
+      </div>
+      {result.cost_breakdown&&<div className="kpi-row">{Object.entries(result.cost_breakdown).filter(([k])=>k!=='total').map(([k,v])=><KPI key={k} label={k.replace(/_/g,' ')} value={`${cur}${Math.round(v).toLocaleString()}`} color="var(--a3)"/>)}</div>}
+      {result.products?.map((p,i)=><div key={i} style={{fontSize:11,color:'var(--tx2)',marginTop:4}}><strong style={{color:'var(--ac)'}}>{p.name}:</strong> {p.total_produced}u produced, {p.num_batches} batches, <span style={{color:p.fill_rate>=99?'var(--gn)':'var(--a4)'}}>{p.fill_rate}% fill</span></div>)}
+      {result.materials?.map((m,i)=><div key={i} style={{fontSize:10,color:'var(--tx3)'}}>{m.name}: {m.num_orders} POs, {m.total_ordered}u, {cur}{m.total_cost}</div>)}
+    </div>}
+
+    {/* ─── PRODUCTION RESULTS ─── */}
+    {result&&result._mode==='production'&&<div className="card">
+      <div className="card-title">🏭 Production Schedule Results</div>
+      <div className="kpi-row">
+        <KPI label="Total Cost" value={`${cur}${result.total_cost?.toLocaleString()}`}/>
+        <KPI label="Solve Time" value={`${result.solve_time}s`} color="var(--a2)"/>
+      </div>
+      {result.products?.map((p,i)=><div key={i} style={{fontSize:11,marginBottom:4}}><strong style={{color:'var(--ac)'}}>{p.name}:</strong> {p.produced}u / {p.required}u required | Completes period {p.completion_period} | {p.utilization}% util</div>)}
+      {result.lines?.map((l,i)=><div key={i} style={{fontSize:10,color:'var(--tx2)'}}><strong>{l.name}:</strong> {l.utilization}% utilized, {l.total_produced}u produced, {l.changeovers} changeovers, {l.overtime_hours}h OT</div>)}
+      {/* Gantt Chart */}
+      {result.gantt&&result.gantt.length>0&&<div style={{marginTop:8}}>
+        <div style={{fontSize:10,fontWeight:600,color:'var(--tx2)',marginBottom:4}}>Gantt Chart</div>
+        <div style={{overflowX:'auto',position:'relative',background:'var(--bg3)',borderRadius:4,padding:8}}>
+          {(result.lines||[]).map((l,li)=><div key={li} style={{display:'flex',alignItems:'center',marginBottom:3}}>
+            <div style={{width:60,fontSize:9,color:'var(--tx2)',flexShrink:0}}>{l.name}</div>
+            <div style={{flex:1,display:'flex',height:18,background:'var(--bg)',borderRadius:2,position:'relative'}}>
+              {result.gantt.filter(g=>g.line_idx===li).map((g,gi)=>{
+                const colors=['#00d4aa','#38bdf8','#a78bfa','#f0b429','#f85149'];
+                return <div key={gi} title={`${g.product} — ${g.quantity}u @ period ${g.period}`} style={{position:'absolute',left:`${g.period/result.periods*100}%`,width:`${Math.max(1/result.periods*100,1)}%`,height:'100%',background:colors[g.product_idx%5],borderRadius:1,opacity:0.8}}/>
+              })}
+            </div>
+          </div>)}
+          <div style={{display:'flex',marginTop:4,gap:8}}>{state.products.map((p,i)=>{const colors=['#00d4aa','#38bdf8','#a78bfa','#f0b429','#f85149'];return <span key={i} style={{fontSize:8,color:colors[i%5]}}>■ {p.name}</span>})}</div>
+        </div>
+      </div>}
+    </div>}
+
+    {/* ─── PROFIT MIX RESULTS ─── */}
+    {result&&result._mode==='profitmix'&&<div className="card">
+      <div className="card-title">💰 Profit Maximizer Results</div>
+      <div className="kpi-row">
+        <KPI label="Total Profit" value={`${cur}${result.total_profit?.toLocaleString()}`} color="var(--gn)"/>
+        <KPI label="Revenue" value={`${cur}${result.total_revenue?.toLocaleString()}`} color="var(--a2)"/>
+        <KPI label="Total Cost" value={`${cur}${result.total_cost?.toLocaleString()}`} color="var(--dg)"/>
+        <KPI label="Margin" value={`${result.margin_pct}%`} color={result.margin_pct>20?'var(--gn)':'var(--a4)'}/>
+      </div>
+      <table className="data-table">
+        <thead><tr><th>Product</th><th>Qty</th><th>Margin/unit</th><th>Revenue</th><th>Cost</th><th>Profit</th><th>% of Total</th><th>Demand Filled</th></tr></thead>
+        <tbody>{result.products?.map((p,i)=><tr key={i}>
+          <td style={{fontWeight:600}}>{p.name}</td>
+          <td className="num" style={{color:'var(--ac)',fontWeight:700}}>{Math.round(p.quantity).toLocaleString()}</td>
+          <td className="num">{cur}{p.margin_per_unit}</td>
+          <td className="num">{cur}{Math.round(p.revenue).toLocaleString()}</td>
+          <td className="num">{cur}{Math.round(p.cost).toLocaleString()}</td>
+          <td className="num" style={{color:'var(--gn)',fontWeight:600}}>{cur}{Math.round(p.profit).toLocaleString()}</td>
+          <td className="num">{p.pct_of_total}%</td>
+          <td className="num" style={{color:p.demand_filled>=95?'var(--gn)':'var(--a4)'}}>{p.demand_filled}%</td>
+        </tr>)}</tbody>
+      </table>
+      {result.shadow_prices&&result.shadow_prices.length>0&&<div style={{marginTop:10}}>
+        <div style={{fontSize:11,fontWeight:600,color:'var(--a3)',marginBottom:4}}>Shadow Prices (value of relaxing each constraint by 1 unit)</div>
+        <table className="data-table">
+          <thead><tr><th>Constraint</th><th>Shadow Price</th><th>Slack</th><th>Binding?</th><th>Interpretation</th></tr></thead>
+          <tbody>{result.shadow_prices.map((s,i)=><tr key={i}>
+            <td>{s.constraint}</td>
+            <td className="num" style={{color:s.binding?'var(--ac)':'var(--tx2)',fontWeight:s.binding?700:400}}>{cur}{s.shadow_price}</td>
+            <td className="num">{s.slack}</td>
+            <td style={{color:s.binding?'var(--dg)':'var(--gn)'}}>{s.binding?'YES — bottleneck':'No'}</td>
+            <td style={{fontSize:10,color:'var(--tx2)'}}>{s.interpretation}</td>
+          </tr>)}</tbody>
+        </table>
+      </div>}
+    </div>}
+
+    {/* ─── TRANSPORT RESULTS ─── */}
+    {result&&result._mode==='transport'&&<div className="card">
+      <div className="card-title">🚛 Transport Optimization Results</div>
+      <div className="kpi-row">
+        <KPI label="Total Logistics Cost" value={`${cur}${result.total_cost?.toLocaleString()}`}/>
+        <KPI label="Total Weight" value={`${Math.round(result.total_weight).toLocaleString()} kg`} color="var(--a2)"/>
+        <KPI label="Shipments" value={result.shipments?.length||0} color="var(--a3)"/>
+      </div>
+      {Object.entries(result.mode_summary||{}).length>0&&<div className="kpi-row">{Object.entries(result.mode_summary).map(([mode,s])=><KPI key={mode} label={mode.toUpperCase()} value={`${s.count} shipments`} sub={`${cur}${Math.round(s.cost).toLocaleString()} · ${Math.round(s.weight)}kg`}/>)}</div>}
+      <table className="data-table">
+        <thead><tr><th>Shipment</th><th>Route</th><th>Weight</th><th>Deadline</th><th>Recommended</th><th>Transit</th><th>Cost</th><th>Alert</th></tr></thead>
+        <tbody>{result.shipments?.map((s,i)=><tr key={i}>
+          <td style={{fontWeight:500}}>{s.name}</td>
+          <td style={{fontSize:10,color:'var(--tx2)'}}>{s.origin} → {s.destination}</td>
+          <td className="num">{s.weight_kg}kg</td>
+          <td className="num">{s.deadline_days}d</td>
+          <td style={{color:'var(--ac)',fontWeight:600}}>{s.recommended?.mode?.replace('_',' ')?.toUpperCase()||'—'}</td>
+          <td className="num">{s.recommended?.transit_days||'—'}d</td>
+          <td className="num">{cur}{s.recommended?.total_cost?.toLocaleString()||'—'}</td>
+          <td>{s.spike_alert?<span style={{color:'var(--dg)',fontSize:9}}>⚠ {s.spike_alert.message}</span>:'—'}</td>
+        </tr>)}</tbody>
+      </table>
+    </div>}
+
+    {/* ─── MONTE CARLO RESULTS ─── */}
+    {result&&result._mode==='montecarlo'&&<div className="card">
+      <div className="card-title">🎲 Monte Carlo Results <span className="badge" style={{background:'rgba(248,81,73,.1)',color:'var(--dg)'}}>{result.n_runs} runs · {result.solve_time}s</span></div>
+      <div className="kpi-row">
+        <KPI label="Avg Cost" value={`${cur}${result.avg_cost?.toLocaleString()}`}/>
+        <KPI label="VaR₉₅" value={`${cur}${result.var95?.toLocaleString()}`} sub="95th pct worst" color="var(--dg)"/>
+        <KPI label="CVaR₉₅" value={`${cur}${result.cvar95?.toLocaleString()}`} sub="avg worst 5%" color="var(--dg)"/>
+        <KPI label="Fragility" value={`${result.fragility}×`} color={result.fragility<1.3?'var(--gn)':'var(--dg)'}/>
+        <KPI label="Fill Rate" value={`${result.avg_fill}%`} color="var(--a2)"/>
+      </div>
+      {result.histogram&&<div style={{height:180,marginTop:8}}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={result.histogram.counts.map((c,i)=>({bin:`${cur}${Math.round(result.histogram.bins[i]/1000)}K`,count:c}))}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#21262d"/>
+            <XAxis dataKey="bin" tick={{fill:'#8b949e',fontSize:8}} stroke="#21262d" interval={2}/>
+            <YAxis tick={{fill:'#8b949e',fontSize:9}} stroke="#21262d"/>
+            <Tooltip contentStyle={{background:'#1c2333',border:'1px solid #30363d',borderRadius:4,fontSize:10}}/>
+            <Bar dataKey="count" fill="#a78bfa" opacity={0.7} name="Frequency"/>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>}
+    </div>}
+  </div>
+}
+
+// ─── TAB 3: SUPPLY NETWORK ───
+function SupplyTab({state,dispatch}){
+  const cur=state.config.currency;
+  const [lcResult,setLcResult]=useState(null);
+  const [lcForm,setLcForm]=useState({foreign_value:10000,exchange_rate:84,freight:25000,insurance_pct:0.5,bcd_pct:7.5,sws_pct:10,igst_pct:18,cha_charges:5000,port_handling:8000,local_transport:12000,gst_registered:true});
+
+  const calcLC=async()=>{
+    try{const r=await fetch('/api/calc/landed-cost',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lcForm)});setLcResult(await r.json())}catch(e){setLcResult({error:e.message})}
+  };
+
+  // Collect all BOM items across products as supplier view
+  const allParts=state.products.flatMap(p=>p.bom.map(b=>({...b,productName:p.name,productId:p.id})));
+  const importParts=allParts.filter(b=>b.supplierType==='import');
+  const domesticParts=allParts.filter(b=>b.supplierType==='domestic');
+
+  return <div className="animate-in">
+    {/* Supplier Summary */}
+    <div className="kpi-row">
+      <KPI label="Total Suppliers" value={allParts.length} sub={`${domesticParts.length} domestic · ${importParts.length} import`}/>
+      <KPI label="Total Material Cost/unit" value={`${cur}${state.products.reduce((a,p)=>a+p.bom.reduce((s,b)=>s+b.cost*b.qtyPer,0),0).toFixed(0)}`} sub="across all SKUs" color="var(--a2)"/>
+      <KPI label="Avg Lead Time" value={`${(allParts.reduce((a,b)=>a+b.leadTime,0)/Math.max(allParts.length,1)).toFixed(1)} wk`} sub="weighted by part count" color="var(--a3)"/>
+      <KPI label="Import Exposure" value={`${importParts.length>0?Math.round(importParts.length/allParts.length*100):0}%`} sub={`${importParts.length} imported parts`} color={importParts.length>0?'var(--a4)':'var(--gn)'}/>
+    </div>
+
+    {/* Supplier Master */}
+    <div className="card">
+      <div className="card-title">📋 Supplier Master <span className="badge" style={{background:'rgba(56,189,248,.1)',color:'var(--a2)'}}>{allParts.length} parts across {state.products.length} SKUs</span></div>
+      <div style={{fontSize:10,color:'var(--tx3)',marginBottom:8}}>Edit supplier details in Products tab → BOM section. This view shows all suppliers consolidated. Import parts trigger landed cost calculation.</div>
+      <div style={{overflowX:'auto'}}>
+        <table className="data-table">
+          <thead><tr><th>Part</th><th>Product</th><th>Source</th><th>Cost</th><th>Qty/Unit</th><th>LT (wk)</th><th>MOQ</th><th>Max</th><th>Hold%</th><th>Incoterm</th><th>HS Code</th><th>Landed Cost</th></tr></thead>
+          <tbody>{allParts.map((b,i)=>{
+            const matCost=b.cost*b.qtyPer;
+            const landed=b.supplierType==='import'?matCost*1.15:matCost; // rough estimate
+            return <tr key={`${b.productId}-${b.id}`}>
+              <td style={{fontWeight:600}}>{b.name}</td>
+              <td style={{color:'var(--tx2)'}}>{b.productName}</td>
+              <td><span style={{padding:'1px 6px',borderRadius:8,fontSize:9,background:b.supplierType==='import'?'rgba(240,180,41,.15)':'rgba(63,185,80,.15)',color:b.supplierType==='import'?'var(--a4)':'var(--gn)'}}>{b.supplierType}</span></td>
+              <td className="num">{cur}{b.cost}</td>
+              <td className="num">{b.qtyPer}</td>
+              <td className="num">{b.leadTime}</td>
+              <td className="num">{b.moq}</td>
+              <td className="num">{b.maxOrder}</td>
+              <td className="num">{b.holdPct}%</td>
+              <td>{b.incoterm||'—'}</td>
+              <td style={{fontFamily:'JetBrains Mono',fontSize:10}}>{b.hsCode||'—'}</td>
+              <td className="num" style={{color:b.supplierType==='import'?'var(--a4)':'var(--tx)'}}>{cur}{landed.toFixed(1)}</td>
+            </tr>
+          })}</tbody>
+        </table>
+      </div>
+    </div>
+
+    {/* Landed Cost Calculator */}
+    <div className="card">
+      <div className="card-title">🛃 Import Landed Cost Calculator <span className="badge" style={{background:'rgba(240,180,41,.1)',color:'var(--a4)'}}>Indian Customs</span></div>
+      <div style={{fontSize:10,color:'var(--tx3)',marginBottom:8}}>Calculate total landed cost for an imported material including BCD, SWS, IGST, CHA, port handling, and local transport. IGST is recoverable as ITC for GST-registered entities.</div>
+      <div className="grid4">
+        <Field label="Foreign Currency Value"><input type="number" value={lcForm.foreign_value} onChange={e=>setLcForm(f=>({...f,foreign_value:+e.target.value}))}/></Field>
+        <Field label="Exchange Rate (₹/unit)"><input type="number" step="0.1" value={lcForm.exchange_rate} onChange={e=>setLcForm(f=>({...f,exchange_rate:+e.target.value}))}/></Field>
+        <Field label="Sea Freight (₹)"><input type="number" value={lcForm.freight} onChange={e=>setLcForm(f=>({...f,freight:+e.target.value}))}/></Field>
+        <Field label="Insurance % of CIF"><input type="number" step="0.1" value={lcForm.insurance_pct} onChange={e=>setLcForm(f=>({...f,insurance_pct:+e.target.value}))}/></Field>
+        <Field label="BCD % (Basic Customs Duty)"><input type="number" step="0.5" value={lcForm.bcd_pct} onChange={e=>setLcForm(f=>({...f,bcd_pct:+e.target.value}))}/></Field>
+        <Field label="SWS % (of BCD)"><input type="number" value={lcForm.sws_pct} onChange={e=>setLcForm(f=>({...f,sws_pct:+e.target.value}))}/></Field>
+        <Field label="IGST %"><input type="number" value={lcForm.igst_pct} onChange={e=>setLcForm(f=>({...f,igst_pct:+e.target.value}))}/></Field>
+        <Field label="GST Registered"><select value={lcForm.gst_registered?'yes':'no'} onChange={e=>setLcForm(f=>({...f,gst_registered:e.target.value==='yes'}))}><option value="yes">Yes (ITC recoverable)</option><option value="no">No</option></select></Field>
+        <Field label="CHA Charges (₹)"><input type="number" value={lcForm.cha_charges} onChange={e=>setLcForm(f=>({...f,cha_charges:+e.target.value}))}/></Field>
+        <Field label="Port Handling (₹)"><input type="number" value={lcForm.port_handling} onChange={e=>setLcForm(f=>({...f,port_handling:+e.target.value}))}/></Field>
+        <Field label="Local Transport (₹)"><input type="number" value={lcForm.local_transport} onChange={e=>setLcForm(f=>({...f,local_transport:+e.target.value}))}/></Field>
+      </div>
+      <button className="btn btn-primary" style={{marginTop:8}} onClick={calcLC}>Calculate Landed Cost</button>
+
+      {lcResult&&!lcResult.error&&<div style={{marginTop:12}}>
+        <div className="kpi-row">
+          <KPI label="Assessable Value" value={`₹${lcResult.assessable_value?.toLocaleString()}`} sub="CIF value"/>
+          <KPI label="Total Duty" value={`₹${lcResult.total_duty?.toLocaleString()}`} sub={`BCD:₹${lcResult.bcd?.toLocaleString()} + SWS:₹${lcResult.sws?.toLocaleString()} + IGST:₹${lcResult.igst?.toLocaleString()}`} color="var(--a4)"/>
+          <KPI label="Total Landed" value={`₹${lcResult.total_landed?.toLocaleString()}`} sub="before ITC" color="var(--dg)"/>
+          <KPI label="Net Landed" value={`₹${lcResult.net_landed?.toLocaleString()}`} sub={`ITC recovery: ₹${lcResult.itc_recovery?.toLocaleString()}`} color="var(--ac)"/>
+          <KPI label="Effective Duty %" value={`${lcResult.effective_duty_pct}%`} sub="net cost above CIF" color="var(--a3)"/>
+        </div>
+        <div style={{marginTop:8,padding:8,background:'var(--bg3)',borderRadius:4,fontSize:10,fontFamily:'JetBrains Mono',color:'var(--tx2)',lineHeight:1.8}}>
+          FOB (₹) = {lcForm.foreign_value} × {lcForm.exchange_rate} = ₹{(lcForm.foreign_value*lcForm.exchange_rate).toLocaleString()}<br/>
+          + Freight = ₹{lcForm.freight.toLocaleString()} + Insurance = ₹{Math.round(lcResult.assessable_value*lcForm.insurance_pct/100).toLocaleString()}<br/>
+          = <strong>CIF = ₹{lcResult.assessable_value?.toLocaleString()}</strong><br/>
+          BCD @ {lcForm.bcd_pct}% = ₹{lcResult.bcd?.toLocaleString()} | SWS @ {lcForm.sws_pct}% of BCD = ₹{lcResult.sws?.toLocaleString()}<br/>
+          IGST base = CIF + BCD + SWS = ₹{lcResult.igst_base?.toLocaleString()} | IGST @ {lcForm.igst_pct}% = <span style={{color:'var(--a4)'}}>₹{lcResult.igst?.toLocaleString()}</span>{lcForm.gst_registered&&<span style={{color:'var(--gn)'}}> ← recoverable as ITC</span>}
+        </div>
+      </div>}
+    </div>
+
+    {/* Incoterms Reference */}
+    <div className="card">
+      <div className="card-title">📖 Incoterms 2020 Quick Reference</div>
+      <table className="data-table">
+        <thead><tr><th>Term</th><th>Seller Delivers To</th><th>Buyer Pays From</th><th>Risk Transfer</th><th>Best For</th></tr></thead>
+        <tbody>
+          <tr><td style={{color:'var(--ac)',fontWeight:700}}>EXW</td><td>Seller's premises</td><td>Everything from factory door</td><td>At seller's door</td><td>When buyer has global forwarder</td></tr>
+          <tr><td style={{color:'var(--ac)',fontWeight:700}}>FOB</td><td>On board vessel at origin port</td><td>Freight + insurance + duties</td><td>Ship's rail at origin</td><td>Most common for Indian imports</td></tr>
+          <tr><td style={{color:'var(--ac)',fontWeight:700}}>CIF</td><td>Destination port (cost+insurance+freight)</td><td>Duties + local transport</td><td>Ship's rail at origin</td><td>Simple landed-at-port pricing</td></tr>
+          <tr><td style={{color:'var(--ac)',fontWeight:700}}>DDP</td><td>Buyer's premises (all inclusive)</td><td>Nothing — seller handles all</td><td>At buyer's door</td><td>When seller has Indian entity</td></tr>
+        </tbody>
+      </table>
+      <div style={{marginTop:6,fontSize:9,color:'var(--tx3)'}}>⚠️ Indian customs always calculates duty on CIF value regardless of Incoterm. If purchased FOB, customs adds notional freight + insurance.</div>
+    </div>
+  </div>
+}
+
+// ─── TAB 4: FINANCE & COSTS ───
+function FinanceTab({state,dispatch}){
+  const cur=state.config.currency;
+  const [deprForm,setDeprForm]=useState({purchase_price:8000000,residual_value:400000,useful_life:10,method:'SLM',wdv_rate:20,total_units:80000,annual_units:'3000,5200,4800,3500,1200'});
+  const [deprResult,setDeprResult]=useState(null);
+  const [npvForm,setNpvForm]=useState({cash_flows:'-200,15,22,30,42,42,42,42,42,42,42',wacc:8.5});
+  const [npvResult,setNpvResult]=useState(null);
+  const [waccForm,setWaccForm]=useState({equity_pct:30,debt_pct:70,cost_equity:12,cost_debt:6.5,tax_rate:25});
+  const [waccResult,setWaccResult]=useState(null);
+
+  const calcDepr=async()=>{
+    const p={...deprForm,wdv_rate:deprForm.wdv_rate/100};
+    if(deprForm.method==='UoP')p.annual_units=deprForm.annual_units.split(',').map(Number);
+    try{const r=await fetch('/api/calc/depreciation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});setDeprResult(await r.json())}catch(e){}
+  };
+  const calcNPV=async()=>{
+    try{const r=await fetch('/api/calc/npv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cash_flows:npvForm.cash_flows.split(',').map(Number),wacc:npvForm.wacc/100})});setNpvResult(await r.json())}catch(e){}
+  };
+  const calcWACC=async()=>{
+    try{const r=await fetch('/api/calc/wacc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(waccForm)});setWaccResult(await r.json())}catch(e){}
+  };
+
+  // Cost structure summary across SKUs
+  const skuCosts=state.products.map(p=>{
+    const matCost=p.bom.reduce((a,b)=>a+b.cost*b.qtyPer,0);
+    return{name:p.name,matCost,varCost:p.variableCost,setupCost:p.setupCost,sellPrice:p.sellPrice,margin:p.sellPrice-matCost-p.variableCost,marginPct:((p.sellPrice-matCost-p.variableCost)/Math.max(p.sellPrice,1)*100).toFixed(1)}
+  });
+
+  // CCC calculation
+  const dso=30,dio=state.products.length>0?Math.round(state.products[0].shelfLife*7/2):15;
+  const avgPayTerms=45;
+  const dpo=avgPayTerms;
+  const ccc=dso+dio-dpo;
+
+  return <div className="animate-in">
+    {/* Cost Structure */}
+    <div className="card">
+      <div className="card-title">📊 Cost Structure per SKU</div>
+      <table className="data-table">
+        <thead><tr><th>Product</th><th>Material Cost</th><th>Variable Cost</th><th>Setup/Batch</th><th>Unit Cost</th><th>Sell Price</th><th>Margin</th><th>Margin %</th></tr></thead>
+        <tbody>{skuCosts.map((s,i)=><tr key={i}>
+          <td style={{fontWeight:600}}>{s.name}</td>
+          <td className="num">{cur}{s.matCost.toFixed(1)}</td>
+          <td className="num">{cur}{s.varCost}</td>
+          <td className="num">{cur}{s.setupCost}</td>
+          <td className="num" style={{fontWeight:600}}>{cur}{(s.matCost+s.varCost).toFixed(1)}</td>
+          <td className="num">{cur}{s.sellPrice}</td>
+          <td className="num" style={{color:s.margin>0?'var(--gn)':'var(--dg)',fontWeight:700}}>{cur}{s.margin.toFixed(1)}</td>
+          <td className="num" style={{color:+s.marginPct>20?'var(--gn)':+s.marginPct>0?'var(--a4)':'var(--dg)'}}>{s.marginPct}%</td>
+        </tr>)}</tbody>
+      </table>
+    </div>
+
+    {/* Working Capital & CCC */}
+    <div className="card">
+      <div className="card-title">💳 Working Capital & Cash Conversion Cycle</div>
+      <div className="kpi-row">
+        <KPI label="DSO" value={`${dso}d`} sub="Days Sales Outstanding"/>
+        <KPI label="DIO" value={`${dio}d`} sub="Days Inventory Outstanding" color="var(--a2)"/>
+        <KPI label="DPO" value={`${dpo}d`} sub="Days Payables Outstanding" color="var(--a3)"/>
+        <KPI label="CCC" value={`${ccc}d`} sub={ccc<0?'Negative CCC — suppliers finance you':ccc<30?'Healthy':'Consider extending DPO'} color={ccc<30?'var(--gn)':ccc<60?'var(--a4)':'var(--dg)'}/>
+      </div>
+      <div style={{fontSize:10,color:'var(--tx3)',marginTop:4}}>CCC = DSO + DIO − DPO = {dso} + {dio} − {dpo} = <strong>{ccc} days</strong>. Lower is better — means less cash tied up in operations.</div>
+    </div>
+
+    {/* WACC Calculator */}
+    <div className="card">
+      <div className="card-title">📐 WACC Calculator <span className="badge" style={{background:'rgba(167,139,250,.1)',color:'var(--a3)'}}>For NPV discounting</span></div>
+      <div className="grid4">
+        <Field label="Equity % of Capital"><input type="number" value={waccForm.equity_pct} onChange={e=>setWaccForm(f=>({...f,equity_pct:+e.target.value,debt_pct:100-e.target.value}))}/></Field>
+        <Field label="Debt % of Capital"><input type="number" value={waccForm.debt_pct} onChange={e=>setWaccForm(f=>({...f,debt_pct:+e.target.value,equity_pct:100-e.target.value}))}/></Field>
+        <Field label="Cost of Equity %"><input type="number" step="0.1" value={waccForm.cost_equity} onChange={e=>setWaccForm(f=>({...f,cost_equity:+e.target.value}))}/></Field>
+        <Field label="Cost of Debt % (pre-tax)"><input type="number" step="0.1" value={waccForm.cost_debt} onChange={e=>setWaccForm(f=>({...f,cost_debt:+e.target.value}))}/></Field>
+      </div>
+      <button className="btn btn-primary btn-sm" onClick={calcWACC}>Calculate WACC</button>
+      {waccResult&&<div className="kpi-row" style={{marginTop:8}}>
+        <KPI label="WACC" value={`${waccResult.wacc}%`} sub={`Equity: ${waccResult.equity_component}% + Debt: ${waccResult.debt_component}%`}/>
+      </div>}
+    </div>
+
+    {/* NPV Calculator */}
+    <div className="card">
+      <div className="card-title">💎 NPV / IRR Calculator <span className="badge" style={{background:'rgba(63,185,80,.1)',color:'var(--gn)'}}>Investment Decision</span></div>
+      <div className="grid2">
+        <Field label="Cash Flows (comma separated: Year0,Year1,...)" hint="Negative = outflow. Ex: -200,15,22,30,42,42,42"><input value={npvForm.cash_flows} onChange={e=>setNpvForm(f=>({...f,cash_flows:e.target.value}))}/></Field>
+        <Field label="Discount Rate / WACC (%)" hint={waccResult?`Computed WACC: ${waccResult.wacc}%`:'Calculate WACC above or enter manually'}><input type="number" step="0.1" value={npvForm.wacc} onChange={e=>setNpvForm(f=>({...f,wacc:+e.target.value}))}/></Field>
+      </div>
+      <button className="btn btn-primary btn-sm" onClick={calcNPV}>Calculate NPV</button>
+      {npvResult&&!npvResult.error&&<div style={{marginTop:8}}>
+        <div className="kpi-row">
+          <KPI label="NPV" value={`${cur}${npvResult.npv?.toLocaleString()}`} sub={npvResult.npv>0?'Value creating':'Value destroying'} color={npvResult.npv>0?'var(--gn)':'var(--dg)'}/>
+          <KPI label="IRR" value={npvResult.irr!==null?`${npvResult.irr}%`:'N/A'} sub={npvResult.irr>npvForm.wacc?`>${npvForm.wacc}% hurdle ✓`:`<${npvForm.wacc}% hurdle ✗`} color={npvResult.irr>npvForm.wacc?'var(--gn)':'var(--dg)'}/>
+          <KPI label="Payback" value={npvResult.payback_discounted!==null?`${npvResult.payback_discounted} yrs`:'Never'} sub="discounted" color="var(--a2)"/>
+          <KPI label="Decision" value={npvResult.decision} color={npvResult.decision==='INVEST'?'var(--gn)':'var(--dg)'}/>
+        </div>
+        <div style={{fontSize:10,color:'var(--tx3)',marginTop:4}}>Rule: NPV {'>'} 0 AND IRR {'>'} WACC → INVEST. NPV = Σ(CF_t / (1+r)^t)</div>
+      </div>}
+    </div>
+
+    {/* Depreciation Calculator */}
+    <div className="card">
+      <div className="card-title">📉 Asset Depreciation Calculator <span className="badge" style={{background:'rgba(56,189,248,.1)',color:'var(--a2)'}}>IAS 16</span></div>
+      <div className="grid4">
+        <Field label="Purchase Price"><input type="number" value={deprForm.purchase_price} onChange={e=>setDeprForm(f=>({...f,purchase_price:+e.target.value}))}/></Field>
+        <Field label="Residual Value"><input type="number" value={deprForm.residual_value} onChange={e=>setDeprForm(f=>({...f,residual_value:+e.target.value}))}/></Field>
+        <Field label="Useful Life (years)"><input type="number" value={deprForm.useful_life} onChange={e=>setDeprForm(f=>({...f,useful_life:+e.target.value}))}/></Field>
+        <Field label="Method"><select value={deprForm.method} onChange={e=>setDeprForm(f=>({...f,method:e.target.value}))}><option value="SLM">Straight-Line (SLM)</option><option value="WDV">Written Down Value (WDV)</option><option value="UoP">Units of Production</option></select></Field>
+        {deprForm.method==='WDV'&&<Field label="WDV Rate %"><input type="number" value={deprForm.wdv_rate} onChange={e=>setDeprForm(f=>({...f,wdv_rate:+e.target.value}))}/></Field>}
+        {deprForm.method==='UoP'&&<><Field label="Total Lifetime Units"><input type="number" value={deprForm.total_units} onChange={e=>setDeprForm(f=>({...f,total_units:+e.target.value}))}/></Field>
+        <Field label="Annual Units (comma sep)"><input value={deprForm.annual_units} onChange={e=>setDeprForm(f=>({...f,annual_units:e.target.value}))}/></Field></>}
+      </div>
+      <button className="btn btn-primary btn-sm" onClick={calcDepr}>Calculate Depreciation</button>
+      {deprResult&&deprResult.schedule&&<div style={{marginTop:8}}>
+        <div style={{fontSize:10,color:'var(--tx2)',marginBottom:4}}>Depreciable amount: {cur}{deprResult.depreciable_amount?.toLocaleString()} | Method: {deprResult.method}</div>
+        <div style={{overflowX:'auto',maxHeight:200}}>
+          <table className="data-table">
+            <thead><tr><th>Year</th>{deprForm.method==='UoP'&&<th>Units</th>}<th>Depreciation</th><th>Book Value</th><th>Tax Shield ({state.config.taxRate}%)</th></tr></thead>
+            <tbody>{deprResult.schedule.map(s=><tr key={s.year}>
+              <td>{s.year}</td>
+              {deprForm.method==='UoP'&&<td className="num">{s.units?.toLocaleString()}</td>}
+              <td className="num" style={{color:'var(--a4)'}}>{cur}{s.depreciation?.toLocaleString()}</td>
+              <td className="num">{cur}{s.book_value?.toLocaleString()}</td>
+              <td className="num" style={{color:'var(--gn)'}}>{cur}{Math.round(s.depreciation*state.config.taxRate/100).toLocaleString()}</td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+        {deprResult.schedule.length>1&&<div style={{height:160,marginTop:8}}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={deprResult.schedule.map(s=>({year:`Yr${s.year}`,dep:s.depreciation,bv:s.book_value}))}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#21262d"/>
+              <XAxis dataKey="year" tick={{fill:'#8b949e',fontSize:9}} stroke="#21262d"/>
+              <YAxis tick={{fill:'#8b949e',fontSize:9}} stroke="#21262d"/>
+              <Tooltip contentStyle={{background:'#1c2333',border:'1px solid #30363d',borderRadius:4,fontSize:10}}/>
+              <Bar dataKey="dep" fill="#f0b429" opacity={0.6} name="Depreciation"/>
+              <Line type="monotone" dataKey="bv" stroke="#38bdf8" strokeWidth={2} dot={false} name="Book Value"/>
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>}
+      </div>}
+    </div>
+  </div>
+}
+
+// ─── TAB 6: ANALYSIS & REPORTS ───
+function AnalysisTab({state,dispatch}){
+  const cur=state.config.currency;
+  const [mcResult,setMcResult]=useState(null);
+  const [sensResult,setSensResult]=useState(null);
+  const [researchResult,setResearchResult]=useState(null);
+  const [loading,setLoading]=useState('');
+  const [alerts,setAlerts]=useState([]);
+
+  const buildPayload=()=>({
+    products:state.products.map(p=>({
+      name:p.name,demand:p.history.flatMap(m=>{const w=Math.round(m/4);return[w,w,w,m-3*w]}).slice(0,state.planning.periods),
+      capacity:p.capacity,setup_cost:p.setupCost,variable_cost:p.variableCost,sell_price:p.sellPrice,shelf_life:p.shelfLife,yield_pct:p.yieldPct,init_inventory:p.initInventory,mape_pct:15,
+      parts:p.bom.map(b=>({name:b.name,cost:b.cost,qty_per:b.qtyPer,cost_cv:0.05,lead_time:b.leadTime,moq:b.moq,max_order:b.maxOrder,hold_pct:b.holdPct,ordering_cost:b.orderingCost})),
+    })),
+    params:{periods:state.planning.periods,carry_rate:0.24,service_level:state.config.serviceLevel},
+  });
+
+  const runMC=async()=>{
+    setLoading('mc');
+    try{const r=await fetch('/api/solve/montecarlo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...buildPayload(),n_runs:500})});setMcResult(await r.json())}catch(e){}
+    setLoading('');
+  };
+
+  const runSens=async()=>{
+    setLoading('sens');
+    try{const r=await fetch('/api/solve/sensitivity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      base_data:buildPayload(),
+      param_ranges:{'service_level':[0.85,0.90,0.95,0.99]},
+    })});setSensResult(await r.json())}catch(e){}
+    setLoading('');
+  };
+
+  const runResearch=async(mode)=>{
+    setLoading('research');
+    try{const r=await fetch('/api/solve/researcher',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base_data:buildPayload(),mode:mode||'fixed',n_experiments:100})});setResearchResult(await r.json())}catch(e){}
+    setLoading('');
+  };
+
+  // Generate alerts
+  useEffect(()=>{
+    const a=[];
+    state.products.forEach(p=>{
+      if(p.shelfLife<8)a.push({sev:'warn',msg:`${p.name}: short shelf life (${p.shelfLife}wk) — high expiry risk`});
+      if(p.bom.length===1)a.push({sev:'info',msg:`${p.name}: single-source material (${p.bom[0].name}) — consider backup supplier`});
+      p.bom.forEach(b=>{
+        if(b.leadTime>4)a.push({sev:'warn',msg:`${p.name}/${b.name}: long lead time (${b.leadTime}wk) — maintain higher safety stock`});
+        if(b.supplierType==='import'&&!b.incoterm)a.push({sev:'info',msg:`${p.name}/${b.name}: import part without Incoterm set`});
+      });
+      const avgDemand=p.history.reduce((s,v)=>s+v,0)/12;
+      if(p.capacity*4<avgDemand)a.push({sev:'critical',msg:`${p.name}: monthly capacity (${p.capacity*4}) < avg demand (${Math.round(avgDemand)}) — capacity shortage!`});
+    });
+    setAlerts(a);
+  },[state.products]);
+
+  return <div className="animate-in">
+    {/* Control Tower */}
+    <div className="card">
+      <div className="card-title">🚨 Control Tower <span className="badge" style={{background:alerts.some(a=>a.sev==='critical')?'rgba(248,81,73,.15)':'rgba(63,185,80,.15)',color:alerts.some(a=>a.sev==='critical')?'var(--dg)':'var(--gn)'}}>{alerts.length} alerts</span></div>
+      {alerts.length===0?<div style={{color:'var(--gn)',fontSize:11}}>✅ All clear — no alerts</div>:
+        alerts.map((a,i)=><div key={i} style={{padding:'4px 8px',marginBottom:3,borderRadius:4,fontSize:11,borderLeft:`3px solid ${a.sev==='critical'?'var(--dg)':a.sev==='warn'?'var(--a4)':'var(--a2)'}`,background:a.sev==='critical'?'rgba(248,81,73,.05)':a.sev==='warn'?'rgba(240,180,41,.05)':'rgba(56,189,248,.05)'}}>
+          {a.sev==='critical'?'🔴':a.sev==='warn'?'🟡':'🔵'} {a.msg}
+        </div>)
+      }
+    </div>
+
+    {/* MC + Sensitivity + Researcher buttons */}
+    <div className="card">
+      <div className="card-title">🔬 Analysis Engine</div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        <button className="btn btn-primary" onClick={runMC} disabled={!!loading}>{loading==='mc'?'Running MC...':'🎲 Monte Carlo (500 runs)'}</button>
+        <button className="btn btn-secondary" onClick={runSens} disabled={!!loading}>{loading==='sens'?'Sweeping...':'📊 Sensitivity Sweep'}</button>
+        <button className="btn btn-secondary" onClick={()=>runResearch('fixed')} disabled={!!loading}>{loading==='research'?'Researching...':'🔬 Auto-Researcher (100 · Fixed)'}</button>
+        <button className="btn btn-secondary" onClick={()=>runResearch('upgrade')} disabled={!!loading}>🔬 Researcher (100 · Upgrade)</button>
+      </div>
+    </div>
+
+    {/* MC Results */}
+    {mcResult&&!mcResult.error&&<div className="card">
+      <div className="card-title">🎲 Monte Carlo Results <span className="badge" style={{background:'rgba(248,81,73,.1)',color:'var(--dg)'}}>{mcResult.n_runs} runs · {mcResult.solve_time}s</span></div>
+      <div className="kpi-row">
+        <KPI label="Avg Cost" value={`${cur}${mcResult.avg_cost?.toLocaleString()}`} sub="expected"/>
+        <KPI label="P10" value={`${cur}${mcResult.p10?.toLocaleString()}`} sub="best 10%" color="var(--gn)"/>
+        <KPI label="P90" value={`${cur}${mcResult.p90?.toLocaleString()}`} sub="worst 10%" color="var(--a4)"/>
+        <KPI label="VaR₉₅" value={`${cur}${mcResult.var95?.toLocaleString()}`} sub="95% confidence" color="var(--dg)"/>
+        <KPI label="CVaR₉₅" value={`${cur}${mcResult.cvar95?.toLocaleString()}`} sub="avg worst 5%" color="var(--dg)"/>
+        <KPI label="Fragility" value={`${mcResult.fragility}×`} sub={mcResult.fragility<1.3?'Robust':mcResult.fragility<1.8?'Moderate':'Fragile'} color={mcResult.fragility<1.3?'var(--gn)':'var(--dg)'}/>
+        <KPI label="Fill Rate" value={`${mcResult.avg_fill}%`} sub={`min: ${mcResult.min_fill}%`} color="var(--a2)"/>
+      </div>
+      {mcResult.histogram&&<div style={{height:180,marginTop:8}}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={mcResult.histogram.counts.map((c,i)=>({bin:`${cur}${Math.round(mcResult.histogram.bins[i]/1000)}K`,count:c}))}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#21262d"/>
+            <XAxis dataKey="bin" tick={{fill:'#8b949e',fontSize:8}} stroke="#21262d" interval={2}/>
+            <YAxis tick={{fill:'#8b949e',fontSize:9}} stroke="#21262d"/>
+            <Tooltip contentStyle={{background:'#1c2333',border:'1px solid #30363d',borderRadius:4,fontSize:10}}/>
+            <Bar dataKey="count" fill="#a78bfa" opacity={0.7} name="Frequency"/>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>}
+      <div style={{fontSize:9,color:'var(--tx3)',marginTop:4}}>Reading: "95% of the time, annual cost stays below {cur}{mcResult.var95?.toLocaleString()}. In the worst 5%, it averages {cur}{mcResult.cvar95?.toLocaleString()}." Fragility = VaR/Avg = {mcResult.fragility}×</div>
+    </div>}
+
+    {/* Sensitivity Results */}
+    {sensResult&&sensResult.results&&<div className="card">
+      <div className="card-title">📊 Sensitivity Analysis</div>
+      <table className="data-table">
+        <thead><tr><th>Parameter</th><th>Value</th><th>Avg Cost</th><th>VaR₉₅</th><th>Fill %</th></tr></thead>
+        <tbody>{sensResult.results.map((r,i)=><tr key={i}>
+          <td>{r.param}</td><td className="num">{typeof r.value==='number'&&r.value<1?(r.value*100).toFixed(0)+'%':r.value}</td>
+          <td className="num">{cur}{r.avg_cost?.toLocaleString()}</td>
+          <td className="num" style={{color:'var(--dg)'}}>{cur}{r.var95?.toLocaleString()}</td>
+          <td className="num" style={{color:r.fill>95?'var(--gn)':'var(--a4)'}}>{r.fill}%</td>
+        </tr>)}</tbody>
+      </table>
+    </div>}
+
+    {/* Researcher Results */}
+    {researchResult&&researchResult.experiments&&<div className="card">
+      <div className="card-title">🔬 Auto-Researcher Results <span className="badge" style={{background:'rgba(0,212,170,.1)',color:'var(--ac)'}}>{researchResult.total_run} experiments · {researchResult.mode}</span></div>
+      <div style={{fontSize:10,color:'var(--tx2)',marginBottom:6}}>Baseline cost: {cur}{researchResult.baseline_cost?.toLocaleString()}</div>
+      <table className="data-table">
+        <thead><tr><th>#</th><th>Configuration</th><th>Avg Cost</th><th>VaR₉₅</th><th>Fill %</th><th>Savings</th></tr></thead>
+        <tbody>{researchResult.experiments.slice(0,10).map((e,i)=><tr key={i}>
+          <td style={{color:i===0?'var(--ac)':'var(--tx)',fontWeight:i===0?700:400}}>{i+1}</td>
+          <td style={{fontSize:9,maxWidth:300}}>{Object.entries(e.config).map(([k,v])=>`${k}=${typeof v==='number'&&v<1?(v*100).toFixed(0)+'%':v}`).join(' · ')}</td>
+          <td className="num" style={{fontWeight:i===0?700:400,color:i===0?'var(--ac)':'var(--tx)'}}>{cur}{e.avg_cost?.toLocaleString()}</td>
+          <td className="num" style={{color:'var(--dg)'}}>{cur}{e.var95?.toLocaleString()}</td>
+          <td className="num">{e.fill}%</td>
+          <td className="num" style={{color:e.savings_pct>0?'var(--gn)':'var(--dg)',fontWeight:600}}>{e.savings_pct>0?'+':''}{e.savings_pct}%</td>
+        </tr>)}</tbody>
+      </table>
+    </div>}
+
+    {/* TCO Waterfall */}
+    <div className="card">
+      <div className="card-title">🏗️ Total Cost of Ownership per SKU</div>
+      {state.products.map(p=>{
+        const mat=p.bom.reduce((a,b)=>a+b.cost*b.qtyPer,0);
+        const annDemand=p.history.reduce((a,b)=>a+b,0);
+        const annMat=mat*annDemand;
+        const annVar=p.variableCost*annDemand;
+        const annSetup=p.setupCost*Math.ceil(annDemand/p.capacity);
+        const annHold=annMat*0.24/2; // avg inv * carry rate
+        const total=annMat+annVar+annSetup+annHold;
+        const bars=[{name:'Material',val:annMat,pct:annMat/total*100},{name:'Production',val:annVar,pct:annVar/total*100},{name:'Setup',val:annSetup,pct:annSetup/total*100},{name:'Holding',val:annHold,pct:annHold/total*100}];
+        return <div key={p.id} style={{marginBottom:8}}>
+          <div style={{fontSize:11,fontWeight:600,marginBottom:4}}>{p.name} — Annual TCO: <span style={{color:'var(--ac)'}}>{cur}{Math.round(total).toLocaleString()}</span></div>
+          <div style={{display:'flex',height:20,borderRadius:4,overflow:'hidden'}}>
+            {bars.map(b=><div key={b.name} title={`${b.name}: ${cur}${Math.round(b.val).toLocaleString()} (${b.pct.toFixed(0)}%)`} style={{width:b.pct+'%',minWidth:b.pct>3?'auto':0,background:b.name==='Material'?'#38bdf8':b.name==='Production'?'#a78bfa':b.name==='Setup'?'#f0b429':'#f85149',display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'#000',fontWeight:600}}>{b.pct>8?`${b.name} ${b.pct.toFixed(0)}%`:''}</div>)}
+          </div>
+          <div style={{display:'flex',gap:12,marginTop:3,fontSize:9,color:'var(--tx2)'}}>
+            {bars.map(b=><span key={b.name}>■ {b.name}: {cur}{Math.round(b.val).toLocaleString()}</span>)}
+          </div>
+        </div>
+      })}
+    </div>
+  </div>
+}
+
+// ════════════════════════════════════════════════
+// MAIN APP
+// ════════════════════════════════════════════════
+const TABS=[
+  {id:'setup',label:'Setup',icon:'⚙️'},
+  {id:'products',label:'Products & Demand',icon:'📦'},
+  {id:'supply',label:'Supply Network',icon:'🌐'},
+  {id:'finance',label:'Finance & Costs',icon:'💰'},
+  {id:'optimize',label:'Optimize & Solve',icon:'⚡'},
+  {id:'analysis',label:'Analysis & Reports',icon:'📊'},
+  {id:'learn',label:'Learning Lab',icon:'🎓'},
+];
+
+function App(){
+  const [state,dispatch]=useReducer(reducer,defaultState);
+  const [activeTab,setActiveTab]=useState('setup');
+
+  // Check server health
+  useEffect(()=>{
+    fetch('/api/health').then(r=>r.json())
+      .then(d=>dispatch({type:'SET_SERVER_STATUS',status:'connected'}))
+      .catch(()=>dispatch({type:'SET_SERVER_STATUS',status:'offline'}));
+    const iv=setInterval(()=>{
+      fetch('/api/health').then(r=>r.json())
+        .then(()=>dispatch({type:'SET_SERVER_STATUS',status:'connected'}))
+        .catch(()=>dispatch({type:'SET_SERVER_STATUS',status:'offline'}));
+    },30000);
+    return()=>clearInterval(iv);
+  },[]);
+
+  const renderTab=()=>{
+    switch(activeTab){
+      case 'setup':return <SetupTab state={state} dispatch={dispatch}/>;
+      case 'products':return <ProductsTab state={state} dispatch={dispatch}/>;
+      case 'supply':return <SupplyTab state={state} dispatch={dispatch}/>;
+      case 'finance':return <FinanceTab state={state} dispatch={dispatch}/>;
+      case 'optimize':return <OptimizeTab state={state} dispatch={dispatch}/>;
+      case 'analysis':return <AnalysisTab state={state} dispatch={dispatch}/>;
+      case 'learn':return <PlaceholderTab icon="🎓" title="Learning Lab" desc="18 interactive sections covering forecasting, safety stock, lot-sizing, Monte Carlo, VaR/CVaR, import/export duties, NPV/IRR, depreciation methods, and more. Coming in Phase 5." phase="Phase 5 — Final polish"/>;
+      default:return null;
+    }
+  };
+
+  return <div className="app-shell">
+    <div className="top-bar">
+      <h1>Enterprise Simulator</h1>
+      <span className="ver">v2.0</span>
+      <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:8,fontSize:11,color:'var(--tx2)'}}>
+        <span className={`server-dot ${state.serverStatus==='connected'?'ok':'err'}`}></span>
+        {state.serverStatus==='connected'?'MILP Solver Connected':'Server Offline'}
+      </div>
+    </div>
+    <div className="tab-bar">
+      {TABS.map(t=><button key={t.id} className={`tab-btn${activeTab===t.id?' active':''}`} onClick={()=>setActiveTab(t.id)}>
+        <span className="tab-icon">{t.icon}</span>{t.label}
+      </button>)}
+    </div>
+    <div className="tab-content">{renderTab()}</div>
+  </div>;
+}
+
+ReactDOM.render(<App/>,document.getElementById('root'));
+</script>
+</body>
+</html>
